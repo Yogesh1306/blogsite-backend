@@ -17,7 +17,7 @@
   "license": "MIT",
   "author": "Yogesh Joshi",
   "type": "module",
-  "main": "src/index.js",
+  "main": "node src/index.js",
   "scripts": {
     "test": "npm run dev",
     "dev": "src/index.js"
