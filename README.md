@@ -125,11 +125,11 @@ Create a `.env` file in the root directory:
 
 ```env
 # Server
-PORT=5000
-CLIENT_URL=http://localhost:3000
+PORT=3000
+CLIENT_URL=your_client_url
 
 # Database
-MONGODB_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/blogsite
+MONGODB_URI=your_mongodb_uri
 
 # JWT
 ACCESS_TOKEN_SECRET=your_access_token_secret
