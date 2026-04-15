@@ -10,7 +10,7 @@ const options = {
   httpOnly: true,
   secure: true,
   maxAge: OAUTH_EXCHANGE_EXPIRY,
-  sameSite: "lax",
+  sameSite: "none",
 };
 
 const generateAccessAndRefreshToken = async (userId) => {
@@ -158,7 +158,6 @@ const getGoogleLoginCallback = async (req, res) => {
       providerAccountId: googleUserId,
     });
   }
-
 
   const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
     user._id,
