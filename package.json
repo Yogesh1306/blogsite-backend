@@ -20,7 +20,7 @@
   "main": "node src/index.js",
   "scripts": {
     "test": "npm run dev",
-    "dev": "src/index.js"
+    "dev": "node src/index.js"
   },
   "dependencies": {
     "@imagekit/nodejs": "^7.3.0",
