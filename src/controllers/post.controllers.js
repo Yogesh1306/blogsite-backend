@@ -118,7 +118,7 @@ const getAllPosts = async (req, res) => {
     .sort(sortObj)
     .populate("user", "username");
 
-  const totalPosts = await Post.countDocuments();
+  const totalPosts = await Post.countDocuments(query);
   const hasMore = page * limit < totalPosts;
 
   return res.status(200).json({
@@ -133,7 +133,6 @@ const updateAPost = async (req, res) => {};
 const deleteAPost = async (req, res) => {
   const { id } = req.params;
   const user = req.user;
-  console.log(id)
 
   const postExist = await Post.findById(id);
   if (!postExist) {
