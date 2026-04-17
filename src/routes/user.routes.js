@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   deleteUser,
+  exchangeOAuthCode,
   getCurrentUser,
   getGoogleLoginCallback,
   getGoogleLoginPage,
@@ -17,6 +18,7 @@ router.route("/register").post(registerUser);
 router.route("/login").post(loginUser);
 router.route("/google").get(getGoogleLoginPage);
 router.route("/google/callback").get(getGoogleLoginCallback);
+router.route("/exchange").post(exchangeOAuthCode)
 
 // protected routes
 router.route("/logout").post(jwtAuth, logoutUser);
