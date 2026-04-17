@@ -3,7 +3,6 @@ import { User } from "../models/user.model.js";
 import { Post } from "../models/post.model.js";
 import * as arctic from "arctic";
 import { OAUTH_EXCHANGE_EXPIRY } from "../constants.js";
-import crypto from "node:crypto";
 import { google } from "../utils/oauth/google.js";
 import { env } from "../config/env.js";
 
@@ -108,17 +107,6 @@ const getGoogleLoginPage = async (req, res) => {
 
   res.redirect(url.toString());
 };
-const oauthExchangeCodes = new Map();
-
-// Cleanup expired codes every 5 minutes
-setInterval(() => {
-  const now = Date.now();
-  for (const [code, entry] of oauthExchangeCodes) {
-    if (now > entry.expiresAt) {
-      oauthExchangeCodes.delete(code);
-    }
-  }
-}, 5 * 60 * 1000);
 
 const getGoogleLoginCallback = async (req, res) => {
   const { code, state } = req.query;
@@ -175,39 +163,13 @@ const getGoogleLoginCallback = async (req, res) => {
     user._id,
   );
 
-  const exchangeCode = crypto.randomUUID();
-
-  oauthExchangeCodes.set(exchangeCode, {
-    accessToken,
-    refreshToken,
-    expiresAt: Date.now() + 60 * 1000,
-  });
-
-  return res.status(200).redirect(`${env.CLIENT_URL}/?code=${exchangeCode}`);
-};
-
-const exchangeOAuthCode = async (req, res) => {
-  const { code } = req.body;
-  const entry = oauthExchangeCodes.get(code);
-
-  if (!entry) {
-    throw new ApiError(401, "Invalid or expired exchange code");
-  }
-
-  if (Date.now() > entry.expiresAt) {
-    oauthExchangeCodes.delete(code);
-    throw new ApiError(401, "Exchange code expired");
-  }
-
-  oauthExchangeCodes.delete(code);
-
-  const { accessToken, refreshToken } = entry;
-
   return res
     .status(200)
     .cookie("accessToken", accessToken, options)
     .cookie("refreshToken", refreshToken, options)
-    .json({ status: 200, message: "OAuth exchange successful" });
+    .clearCookie("google_code_verifier", options)
+    .clearCookie("google_code_verifier", options)
+    .redirect(`${env.CLIENT_URL}/`);
 };
 
 const logoutUser = async (req, res) => {
@@ -278,6 +240,4 @@ export {
   deleteUser,
   getSavedPosts,
   savePost,
-  oauthExchangeCodes,
-  exchangeOAuthCode
 };
