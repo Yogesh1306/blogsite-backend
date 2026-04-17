@@ -108,6 +108,8 @@ const getGoogleLoginPage = async (req, res) => {
   res.redirect(url.toString());
 };
 
+const oauthExchangeCodes = new Map();
+
 const getGoogleLoginCallback = async (req, res) => {
   const { code, state } = req.query;
 
@@ -163,13 +165,39 @@ const getGoogleLoginCallback = async (req, res) => {
     user._id,
   );
 
+  const exchangeCode = crypto.randomUUID();
+
+  oauthExchangeCodes.set(exchangeCode, {
+    accessToken,
+    refreshToken,
+    expiresAt: Date.now() + 60 * 1000,
+  });
+
+  return res.status(200).redirect(`${env.CLIENT_URL}/?code=${exchangeCode}`);
+};
+
+const exchangeOAuthCode = async (req, res) => {
+  const { code } = req.body;
+  const entry = oauthExchangeCodes.get(code);
+
+  if (!entry) {
+    throw new ApiError(401, "Invalid or expired exhange code");
+  }
+
+  if (Date.now() > entry.expiresAt) {
+    oauthExchangeCodes.delete(code);
+    throw new ApiError(401, "Exchange code expired");
+  }
+
+  oauthExchangeCodes.delete(code);
+
+  const { accessToken, refreshToken } = entry;
+
   return res
     .status(200)
     .cookie("accessToken", accessToken, options)
     .cookie("refreshToken", refreshToken, options)
-    .clearCookie("google_code_verifier", options)
-    .clearCookie("google_code_verifier", options)
-    .redirect(`${env.CLIENT_URL}/`);
+    .json({ status: 200, message: "OAuth exchange successful" });
 };
 
 const logoutUser = async (req, res) => {
@@ -240,4 +268,6 @@ export {
   deleteUser,
   getSavedPosts,
   savePost,
+  oauthExchangeCodes,
+  exchangeOAuthCode
 };
