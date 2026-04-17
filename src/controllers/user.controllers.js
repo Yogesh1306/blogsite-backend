@@ -3,6 +3,7 @@ import { User } from "../models/user.model.js";
 import { Post } from "../models/post.model.js";
 import * as arctic from "arctic";
 import { OAUTH_EXCHANGE_EXPIRY } from "../constants.js";
+import crypto from "node:crypto";
 import { google } from "../utils/oauth/google.js";
 import { env } from "../config/env.js";
 
@@ -107,8 +108,17 @@ const getGoogleLoginPage = async (req, res) => {
 
   res.redirect(url.toString());
 };
-
 const oauthExchangeCodes = new Map();
+
+// Cleanup expired codes every 5 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [code, entry] of oauthExchangeCodes) {
+    if (now > entry.expiresAt) {
+      oauthExchangeCodes.delete(code);
+    }
+  }
+}, 5 * 60 * 1000);
 
 const getGoogleLoginCallback = async (req, res) => {
   const { code, state } = req.query;
@@ -181,7 +191,7 @@ const exchangeOAuthCode = async (req, res) => {
   const entry = oauthExchangeCodes.get(code);
 
   if (!entry) {
-    throw new ApiError(401, "Invalid or expired exhange code");
+    throw new ApiError(401, "Invalid or expired exchange code");
   }
 
   if (Date.now() > entry.expiresAt) {
