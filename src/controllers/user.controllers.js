@@ -91,9 +91,9 @@ const getCurrentUser = async (req, res) => {
 };
 
 const googleLogin = async (req, res) => {
-  const {email, avatar, googleUserId } = req.body;
+  const { email, avatar, googleUserId } = req.body;
 
-  if (!( email && avatar && googleUserId)) {
+  if (!(email && avatar && googleUserId)) {
     throw new ApiError(400, "Login credential missing!");
   }
 
@@ -136,21 +136,21 @@ const googleLogin = async (req, res) => {
 };
 
 const githubLogin = async (req, res) => {
-  const {email, avatar, githubUserId } = req.body;
+  const { email, avatar, githubUserId } = req.body;
 
-  if (!( email && avatar && githubUserId)) {
+  if (!(email && avatar && githubUserId)) {
     throw new ApiError(400, "Login credential missing!");
   }
 
   let user = await User.findOne({ email });
 
-  if(user.provider === "google"){
-    throw new ApiError(402, "User already registered with another provided!")
-  }
-
   if (user) {
     user.avatar = avatar;
-    user.provider = "github";
+    if (user.provider === "google") {
+      throw new ApiError(402, "User already registered with another provided!");
+    } else {
+      user.provider = "github";
+    }
     user.providerAccountId = githubUserId;
     await user.save();
   } else {
