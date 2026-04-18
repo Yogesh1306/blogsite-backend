@@ -3,6 +3,7 @@ import {
   deleteUser,
   getCurrentUser,
   getSavedPosts,
+  githubLogin,
   googleLogin,
   loginUser,
   logoutUser,
@@ -15,6 +16,7 @@ const router = Router();
 router.route("/register").post(registerUser);
 router.route("/login").post(loginUser);
 router.route("/google").post(googleLogin);
+router.route("/github").post(githubLogin);
 
 
 // protected routes
