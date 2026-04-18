@@ -2,9 +2,8 @@ import { Router } from "express";
 import {
   deleteUser,
   getCurrentUser,
-  getGoogleLoginCallback,
-  getGoogleLoginPage,
   getSavedPosts,
+  googleLogin,
   loginUser,
   logoutUser,
   registerUser,
@@ -15,8 +14,8 @@ const router = Router();
 
 router.route("/register").post(registerUser);
 router.route("/login").post(loginUser);
-router.route("/google").get(getGoogleLoginPage);
-router.route("/google/callback").get(getGoogleLoginCallback);
+router.route("/google").post(googleLogin);
+
 
 // protected routes
 router.route("/logout").post(jwtAuth, logoutUser);
