@@ -114,9 +114,58 @@ const googleLogin = async (req, res) => {
     user = await User.create({
       username,
       email,
-      avatar: picture,
+      avatar,
       provider: "google",
       providerAccountId: googleUserId,
+    });
+  }
+
+  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
+    user._id,
+  );
+
+  const updatedUser = await User.findById(user._id).select(
+    "-password -refreshToken",
+  );
+
+  return res
+    .status(200)
+    .cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", refreshToken, options)
+    .json({ status: 200, user: updatedUser });
+};
+
+const githubLogin = async (req, res) => {
+  const {email, avatar, githubUserId } = req.body;
+
+  if (!( email && avatar && githubUserId)) {
+    throw new ApiError(400, "Login credential missing!");
+  }
+
+  let user = await User.findOne({ email });
+
+  if(user.provider === "google"){
+    throw new ApiError(402, "User already registered with another provided!")
+  }
+
+  if (user) {
+    user.avatar = avatar;
+    user.provider = "github";
+    user.providerAccountId = githubUserId;
+    await user.save();
+  } else {
+    const base = email
+      .split("@")[0]
+      .toLowerCase()
+      .replaceAll(/[^a-z0-9]/g, "");
+    const username = `${base}${Math.floor(1000 + Math.random() * 9000)}`;
+
+    user = await User.create({
+      username,
+      email,
+      avatar,
+      provider: "github",
+      providerAccountId: githubUserId,
     });
   }
 
@@ -196,6 +245,7 @@ const savePost = async (req, res) => {
 export {
   registerUser,
   loginUser,
+  githubLogin,
   getCurrentUser,
   googleLogin,
   logoutUser,
