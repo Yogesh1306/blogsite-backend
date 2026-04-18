@@ -1,10 +1,7 @@
 import { ApiError } from "../utils/ApiError.js";
 import { User } from "../models/user.model.js";
 import { Post } from "../models/post.model.js";
-import * as arctic from "arctic";
 import { OAUTH_EXCHANGE_EXPIRY } from "../constants.js";
-import { google } from "../utils/oauth/google.js";
-import { env } from "../config/env.js";
 
 const options = {
   httpOnly: true,
@@ -93,53 +90,17 @@ const getCurrentUser = async (req, res) => {
   });
 };
 
-const getGoogleLoginPage = async (req, res) => {
-  const state = arctic.generateState();
-  const codeVerifier = arctic.generateCodeVerifier();
-  const url = google.createAuthorizationURL(state, codeVerifier, [
-    "openid",
-    "profile",
-    "email",
-  ]);
+const googleLogin = async (req, res) => {
+  const {email, avatar, googleUserId } = req.body;
 
-  res.cookie("google_oauth_state", state, options);
-  res.cookie("google_code_verifier", codeVerifier, options);
-
-  res.redirect(url.toString());
-};
-
-const getGoogleLoginCallback = async (req, res) => {
-  const { code, state } = req.query;
-
-  const {
-    google_oauth_state: storedState,
-    google_code_verifier: codeVerifier,
-  } = req.cookies;
-
-  if (
-    !code ||
-    !state ||
-    !storedState ||
-    !codeVerifier ||
-    state !== storedState
-  ) {
-    return res.redirect(`${env.CLIENT_URL}/login?error=auth_failed`);
+  if (!( email && avatar && googleUserId)) {
+    throw new ApiError(400, "Login credential missing!");
   }
-
-  let tokens;
-  try {
-    tokens = await google.validateAuthorizationCode(code, codeVerifier);
-  } catch {
-    return res.redirect(`${env.CLIENT_URL}/login?error=auth_failed`);
-  }
-
-  const claims = arctic.decodeIdToken(tokens.idToken());
-  const { sub: googleUserId, email, picture } = claims;
 
   let user = await User.findOne({ email });
 
   if (user) {
-    user.avatar = picture;
+    user.avatar = avatar;
     user.provider = "google";
     user.providerAccountId = googleUserId;
     await user.save();
@@ -163,13 +124,15 @@ const getGoogleLoginCallback = async (req, res) => {
     user._id,
   );
 
+  const updatedUser = await User.findById(user._id).select(
+    "-password -refreshToken",
+  );
+
   return res
     .status(200)
     .cookie("accessToken", accessToken, options)
     .cookie("refreshToken", refreshToken, options)
-    .clearCookie("google_code_verifier", options)
-    .clearCookie("google_code_verifier", options)
-    .redirect(`${env.CLIENT_URL}/`);
+    .json({ status: 200, user: updatedUser });
 };
 
 const logoutUser = async (req, res) => {
@@ -234,8 +197,7 @@ export {
   registerUser,
   loginUser,
   getCurrentUser,
-  getGoogleLoginPage,
-  getGoogleLoginCallback,
+  googleLogin,
   logoutUser,
   deleteUser,
   getSavedPosts,
