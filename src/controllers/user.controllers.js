@@ -147,7 +147,7 @@ const githubLogin = async (req, res) => {
   if (user) {
     user.avatar = avatar;
     if (user.provider === "google") {
-      throw new ApiError(402, "User already registered with another provided!");
+      throw new ApiError(409, "User already registered with another provider!");
     } else {
       user.provider = "github";
     }
